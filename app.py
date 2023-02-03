@@ -266,7 +266,7 @@ def generatedDataFilter():
 
 
         # data is an array of x coordnates of mouse movements in this code
-        #  try to send x_axis-->req 
+        #  x_axis_data--> array feha 1/time, w ageeb 7aga bt3ed el wa2t
         data=json.loads(request.data)
         x_axis_data= []
         y_axis_data=[]
