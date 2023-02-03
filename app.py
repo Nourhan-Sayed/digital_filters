@@ -254,6 +254,25 @@ def dataFilter():
     return render_template("index.html")
 
 
+@app.route('/getGeneratedSignals', methods=['POST', 'GET'])
+def generatedDataFilter():
+    if request.method == 'GET':
+        # here take amplitude and frequency values and turn to
+        print("o")
+        # data = frequencyrespose()
+        # return jsonify(data)
+
+    if request.method == 'POST':
+        arr_x_coordinates=json.loads(request.data)
+        print(arr_x_coordinates)
+        print("hello")
+        # return jsonify({
+        #      'xAxisData': arr_x_coordinates.tolist()
+        # })
+
+    return render_template("index.html")
+
+
 @app.route('/getData', methods=['POST'])
 def my_form_post():
     global path

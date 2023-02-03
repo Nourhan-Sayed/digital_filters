@@ -272,21 +272,26 @@ function sliderValue() {
 }
 
 
-var c_p_x_array= [];
-var c_p_y_array= [];  
-let lenx = c_p_x_array.length;
-let leny = c_p_y_array.length;
-
 function getMouseCursorPosition(event) {
-
-document.getElementById("c_p_x").textContent = event.clientX;
-document.getElementById("c_p_y").textContent = event.clientY;
-
-c_p_x_array.push( c_p_x );
-c_p_y_array.push( c_p_y );
-
-document.getElementById('result').innerHTML = lenx;
-}
+  var c_p_x_array= [];
+  var c_p_y_array= [];  
+  let lenx = c_p_x_array.length;
+  let leny = c_p_y_array.length;
+  document.getElementById("c_p_x").textContent = event.clientX;
+  document.getElementById("c_p_y").textContent = event.clientY;
+  
+  c_p_x_array.push( [c_p_x] );
+  c_p_y_array.push( [c_p_y] );
+  
+  $.ajax({
+    url: '/getGeneratedSignals',
+    type: 'post',
+    contentType: 'application/json',
+    dataType: 'json',
+    data: c_p_x
+  });
+  
+  }
 
 
 function sendzeros() {
