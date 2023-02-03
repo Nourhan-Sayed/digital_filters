@@ -297,7 +297,7 @@ $.ajax({
   type: 'post',
   contentType: 'application/json',
   dataType: 'json',
-  data: x_array, 
+  data: {x_array,  },
   success: function(response) {
     xData = response.xAxisData;
     yData = response.yAxisData;
