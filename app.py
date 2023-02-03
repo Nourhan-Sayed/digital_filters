@@ -260,13 +260,17 @@ def generatedDataFilter():
         # data is a dataframe of x, y points to be drawn where x represents freq of mouse movements
         # and y represents amplitude (difference between two points on original x axis)
 
-        # alternate solution is to recieve both x and y as arrays, then apply filter on y then turn to list directly
+        # alternate solution is to recieve both x an array, then apply filter on y_vals then turn to list directly
         # in which case, x array stays the same, but subtract from y array 1/2 canvas value (check it from screen)
         #using the "get elements by id" code
-        
+
+
+        # data is an array of x coordnates of mouse movements in this code
+        #  try to send x_axis-->req 
         data=json.loads(request.data)
-        x_axis_data=data[1,0]
-        y_axis_data=data[0,1]
+        x_axis_data= []
+        y_axis_data=[]
+        y_axis_data= data-800
         #checking that array is correct
         print(len(data))
         filterdata(y_axis_data)

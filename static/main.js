@@ -290,13 +290,14 @@ const canvas = document.querySelector('canvas')
 canvas.addEventListener('mousedown', function(e) {
     getCursorPosition(canvas, e)
 })
-
+var x_array= [];
+x_array.push(x);
 $.ajax({
   url: '/getGeneratedSignals',
   type: 'post',
   contentType: 'application/json',
   dataType: 'json',
-  data: x, 
+  data: x_array, 
   success: function(response) {
     xData = response.xAxisData;
     yData = response.yAxisData;
