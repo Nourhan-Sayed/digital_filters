@@ -273,25 +273,44 @@ function sliderValue() {
 
 
 function getMouseCursorPosition(event) {
-  var c_p_x_array= [];
-  var c_p_y_array= [];  
-  let lenx = c_p_x_array.length;
-  let leny = c_p_y_array.length;
-  document.getElementById("c_p_x").textContent = event.clientX;
-  document.getElementById("c_p_y").textContent = event.clientY;
-  
-  c_p_x_array.push( [c_p_x] );
-  c_p_y_array.push( [c_p_y] );
-  
-  $.ajax({
-    url: '/getGeneratedSignals',
-    type: 'post',
-    contentType: 'application/json',
-    dataType: 'json',
-    data: c_p_x
-  });
-  
+// var c_p_x_array= [];
+// var c_p_y_array= [];  
+// let lenx = c_p_x_array.length;
+// let leny = c_p_y_array.length;
+// document.getElementById("c_p_x").textContent = event.clientX;
+// document.getElementById("c_p_y").textContent = event.clientY;
+
+// c_p_x_array.push( [c_p_x] );
+// c_p_y_array.push( [c_p_y] );
+const rect = canvas.getBoundingClientRect()
+x = event.clientX - rect.left
+y = event.clientY - rect.top
+console.log("x: " + x + " y: " + y)
+const canvas = document.querySelector('canvas')
+canvas.addEventListener('mousedown', function(e) {
+    getCursorPosition(canvas, e)
+})
+
+$.ajax({
+  url: '/getGeneratedSignals',
+  type: 'post',
+  contentType: 'application/json',
+  dataType: 'json',
+  data: x, 
+  success: function(response) {
+    xData = response.xAxisData;
+    yData = response.yAxisData;
+    filtered = response.filter;
+    length = response.datalength;
+    // signalIterator = signalIterator + 1;
+    drawfrequencyreposne(xData, yData, filtered, 'realTimeSignal', 'signal', 'filtered Signal');
+    // if (signalIterator * slidervalue < length) {
+    //   setTimeout(getSignals, slidervalue * 10);
+    // }
   }
+});
+
+}
 
 
 function sendzeros() {

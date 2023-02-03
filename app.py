@@ -256,19 +256,27 @@ def dataFilter():
 
 @app.route('/getGeneratedSignals', methods=['POST', 'GET'])
 def generatedDataFilter():
-    if request.method == 'GET':
-        # here take amplitude and frequency values and turn to
-        print("o")
-        # data = frequencyrespose()
-        # return jsonify(data)
-
     if request.method == 'POST':
-        arr_x_coordinates=json.loads(request.data)
-        print(arr_x_coordinates)
-        print("hello")
-        # return jsonify({
-        #      'xAxisData': arr_x_coordinates.tolist()
-        # })
+        # data is a dataframe of x, y points to be drawn where x represents freq of mouse movements
+        # and y represents amplitude (difference between two points on original x axis)
+
+        # alternate solution is to recieve both x and y as arrays, then apply filter on y then turn to list directly
+        # in which case, x array stays the same, but subtract from y array 1/2 canvas value (check it from screen)
+        #using the "get elements by id" code
+        
+        data=json.loads(request.data)
+        x_axis_data=data[1,0]
+        y_axis_data=data[0,1]
+        #checking that array is correct
+        print(len(data))
+        filterdata(y_axis_data)
+        return jsonify({
+             'xAxisData': x_axis_data.tolist(),
+             'yAxisData': y_axis_data.tolist(),
+             'filter': filteredSignalYdata.tolist(),
+             'datalength': dataLength,
+
+        })
 
     return render_template("index.html")
 
