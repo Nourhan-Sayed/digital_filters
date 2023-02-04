@@ -1,16 +1,19 @@
 import re
+import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from flask import (Flask, json, jsonify, redirect, render_template, request,
-                   url_for)
+                   url_for, session)
 from flask.wrappers import Response
 from numpy import lib
 from numpy.core.records import array
 from numpy.matrixlib import defmatrix
 from scipy import signal
-
+app = Flask(__name__)
+app.config['SECRET_KEY'] ='verysecretkey'
+app.config['SESSION_TYPE']='filesystem'
 i = 0
 zeros = []
 poles = []
@@ -125,11 +128,13 @@ def formattocoardinates(x):
     return ([np.real(x) * 100 + 150, np.imag(x) * (-100) + 150])
 
 
-app = Flask(__name__)
+
 
 
 @app.route('/')
 def index():
+    # if session.get('x') is not None:
+    #     print('SESSIONNNN',session['x'])
     return render_template('index.html')
 
 
@@ -244,6 +249,7 @@ def dataFilter():
         size = int(arr[1])
         x_chuncks = np.array(signalxAxisData[i * size:(i + 1) * size])
         y_chuncks = np.array(signalyAxisData[i * size:(i + 1) * size])
+        print(type(y_chuncks))
         filterdata(y_chuncks)
         return jsonify({
             'xAxisData': x_chuncks.tolist(),
@@ -256,6 +262,10 @@ def dataFilter():
 
 @app.route('/getGeneratedSignals', methods=['POST', 'GET'])
 def generatedDataFilter():
+    print(request.method)
+    if session.get("x") is None:
+        session["x"]=[]
+    # session['x']=[]
     if request.method == 'POST':
         # data is a dataframe of x, y points to be drawn where x represents freq of mouse movements
         # and y represents amplitude (difference between two points on original x axis)
@@ -265,21 +275,29 @@ def generatedDataFilter():
         #using the "get elements by id" code
 
 
-        # data is an array of x coordnates of mouse movements in this code
+        # data is an array of x coordnates of mou_se movements in this code
         #  x_axis_data--> array feha 1/time, w ageeb 7aga bt3ed el wa2t
-        data=json.loads(request.data)
-        x_axis_data= []
-        y_axis_data=[]
-        y_axis_data= data-800
+        # data=json.loads(request.data)
+        x_array=request.get_json("x_array")
+        x_arr=x_array['x_array']
+        # session['x']
+        session['x'].append(x_arr)
+        session.modified = True
+        point_array=session['x']
+        x_axis_data=np.arange(0, len(point_array), 10)
+        point_array=list( itertools.chain.from_iterable(point_array))
+        y_axis_data= []
+        # for i in range (len(point_array)):
+        #     y_axis_data[i]= point_array[i]-800
         #checking that array is correct
-        print(len(data))
-        filterdata(y_axis_data)
+        print(len(y_axis_data), len(point_array))
+
+        filterdata(np.array(y_axis_data))
         return jsonify({
              'xAxisData': x_axis_data.tolist(),
-             'yAxisData': y_axis_data.tolist(),
-             'filter': filteredSignalYdata.tolist(),
-             'datalength': dataLength,
-
+             'yAxisData': point_array,
+             'filter': filteredSignalYdata,
+             'datalength': len(y_axis_data),
         })
 
     return render_template("index.html")
@@ -296,4 +314,4 @@ def my_form_post():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

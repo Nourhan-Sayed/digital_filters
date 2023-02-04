@@ -270,46 +270,62 @@ function sliderValue() {
   slidervalue = x.value;
   signalIterator = parseInt(oldmult / slidervalue);
 }
-
-
-function getMouseCursorPosition(event) {
 // var c_p_x_array= [];
 // var c_p_y_array= [];  
 // let lenx = c_p_x_array.length;
 // let leny = c_p_y_array.length;
 // document.getElementById("c_p_x").textContent = event.clientX;
 // document.getElementById("c_p_y").textContent = event.clientY;
-
 // c_p_x_array.push( [c_p_x] );
 // c_p_y_array.push( [c_p_y] );
+
+function getMouseCursorPosition(event) {
+  console.log("FUNCTION ENTERED")
+const canvas = document.querySelector('canvas')
 const rect = canvas.getBoundingClientRect()
 x = event.clientX - rect.left
 y = event.clientY - rect.top
-console.log("x: " + x + " y: " + y)
-const canvas = document.querySelector('canvas')
+// console.log("x: " + x + " y: " + y)
 canvas.addEventListener('mousedown', function(e) {
     getCursorPosition(canvas, e)
 })
 var x_array= [];
 x_array.push(x);
-$.ajax({
-  url: '/getGeneratedSignals',
-  type: 'post',
-  contentType: 'application/json',
-  dataType: 'json',
-  data: {x_array,  },
-  success: function(response) {
-    xData = response.xAxisData;
-    yData = response.yAxisData;
-    filtered = response.filter;
-    length = response.datalength;
-    // signalIterator = signalIterator + 1;
-    drawfrequencyreposne(xData, yData, filtered, 'realTimeSignal', 'signal', 'filtered Signal');
-    // if (signalIterator * slidervalue < length) {
-    //   setTimeout(getSignals, slidervalue * 10);
-    // }
-  }
-});
+console.log(x_array)
+fetch('http://127.0.0.1:5000/getGeneratedSignals', {
+        method: 'POST',
+        body: JSON.stringify({x_array:x_array}),
+        headers:{
+          'Content-Type': 'application/json',
+        'Accept': 'json, html'
+    }}).then((response) =>{
+      xData = response.xAxisData;
+      yData = response.yAxisData;
+      filtered = response.filter;
+      length = response.datalength;
+      drawfrequencyreposne(xData, yData, filtered, 'realTimeSignal', 'signal', 'filtered Signal');
+        
+      }
+    )
+// $.ajax({
+//   url: '/getGeneratedSignals',
+//   type: 'post',
+//   contentType: 'application/json',
+//   dataType: 'json',
+//   data:JSON.stringify(x_array)  ,
+//   success: function(response) {
+//     console.log("SUCCESS")
+//     // xData = response.xAxisData;
+//     // yData = response.yAxisData;
+//     // filtered = response.filter;
+//     // length = response.datalength;
+//     // // signalIterator = signalIterator + 1;
+//     // drawfrequencyreposne(xData, yData, filtered, 'realTimeSignal', 'signal', 'filtered Signal');
+//     // if (signalIterator * slidervalue < length) {
+//     //   setTimeout(getSignals, slidervalue * 10);
+//     // }
+//   }
+// });
 
 }
 
