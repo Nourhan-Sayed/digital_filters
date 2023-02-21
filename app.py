@@ -1,25 +1,22 @@
 import re
-import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from flask import (Flask, json, jsonify, redirect, render_template, request,
-                   url_for, session)
+                   url_for)
 from flask.wrappers import Response
 from numpy import lib
 from numpy.core.records import array
 from numpy.matrixlib import defmatrix
 from scipy import signal
-app = Flask(__name__)
-app.config['SECRET_KEY'] ='verysecretkey'
-app.config['SESSION_TYPE']='filesystem'
+
 i = 0
 zeros = []
 poles = []
 gain = 1
-Numerator_polynomial_coefficients = []
-Denominator_polynomial_coefficients = []
+b = []
+a = []
 allpassfiltersreal = []
 allpassfiltersimg = []
 allpassfilterszeros = []
@@ -34,7 +31,7 @@ library = []
 path = ""
 
 
-def getMyData():  # reading file and get data in file 
+def getMyData():
     global signalData, signalxAxisData, signalyAxisData, dataLength
     signalData = pd.read_csv(path)
     signalxAxisData = signalData.values[:, 0]
@@ -42,43 +39,38 @@ def getMyData():  # reading file and get data in file
     dataLength = len(signalxAxisData)
 
 
-def maplibrary(x, y):   # convert x and y to string in form  x+yj where x is real and y is imaginary
+def maplibrary(x, y):
     return str(str(x) + "+" + str(y) + "j")
 
 
-def readlibrary():  #readings that user enter it in all pass 
+def readlibrary():
     global allpassfiltersreal, allpassfiltersimg, library
-    data = pd.read_csv(r'library.csv') 
+    data = pd.read_csv(r'library.csv')
     allpassfiltersreal = data.values[:, 0]
     allpassfiltersimg = data.values[:, 1]
-    library = list(map(maplibrary, allpassfiltersreal, allpassfiltersimg)) # map(function , frist parameter as x , second parameter as y)
+    library = list(map(maplibrary, allpassfiltersreal, allpassfiltersimg))
 
 
-
-def writeliberary(): #saving that user enter it in all pass 
+def writeliberary():
     global allpassfiltersreal, allpassfiltersimg
     df = pd.DataFrame(allpassfiltersimg, allpassfiltersreal)
     df.to_csv('library.csv')
 
 
-
-def makefilter(): #filter form
-    
+def makefilter():
     # w is the omega or the x axis of the magnitude and frequency responsevalues
-    # w is The frequencies at which h was computed, in the same units as fs. By default, w is normalized to the range [0, pi) (radians/sample).
-
     # h is an array that hold two array one is the magnitude and one is the phase
-    # h is The frequency response, as complex numbers.
     global w, h
-    w, h = signal.freqz_zpk(zeros, poles, gain, fs=6.283185307179586)   # this function make zeros and pole in form of H(Z) = K (sigma(Z-z)/(Z-p))
+    w, h = signal.freqz_zpk(zeros, poles, gain)
 
 
 
-def getfrequencyresponse(): #get magnitude and frequecy of filter 
+def getfrequencyresponse():
     global magnitudeplotdata, angleplotdata
     magnitudeplotdata = 20 * np.log10(abs(h))
     angleplotdata = np.unwrap(np.angle(h))
     magnitudeplotdata = np.around(magnitudeplotdata, 4)
+
 
 
 def allpassfiltermaker():
@@ -102,10 +94,13 @@ def allpassfiltermaker():
     }
 
 
-def filterdata(originalData): #filtering signal
-    global Numerator_polynomial_coefficients, Denominator_polynomial_coefficients, filteredSignalYdata
-    Numerator_polynomial_coefficients, Denominator_polynomial_coefficients = signal.zpk2tf(zeros, poles, gain)
-    filteredSignalYdata = (signal.lfilter(Numerator_polynomial_coefficients, Denominator_polynomial_coefficients, originalData))
+
+
+def filterdata(originalData):
+    global b, a, filteredSignalYdata
+    b, a = signal.zpk2tf(zeros, poles, gain)
+    filteredSignalYdata = np.real(signal.lfilter(b, a, originalData))
+    return filteredSignalYdata
 
 
 
@@ -114,9 +109,10 @@ def format(x):
     return (x[0] + 1j * x[1])
 
 
+
 def frequencyrespose():
     makefilter()
-    getfrequencyresponse() 
+    getfrequencyresponse()
     return {
         'w': w.tolist(),
         'magnitude': magnitudeplotdata.tolist(),
@@ -124,17 +120,16 @@ def frequencyrespose():
     }
 
 
+
 def formattocoardinates(x):
     return ([np.real(x) * 100 + 150, np.imag(x) * (-100) + 150])
 
 
-
+app = Flask(__name__)
 
 
 @app.route('/')
 def index():
-    # if session.get('x') is not None:
-    #     print('SESSIONNNN',session['x'])
     return render_template('index.html')
 
 
@@ -143,10 +138,22 @@ def getzeros():
     global zeros
     if request.method == 'POST':
         zeros = json.loads(request.data)
-        return jsonify(0)
+        return jsonify(zeros)
     return render_template("index.html")
 
 
+
+@app.route('/generate', methods=['POST'])
+def last():
+    if request.method == 'POST':
+        value = request.json['signal']
+        value = np.array(value)
+        value = filterdata(value) 
+        print(value)
+        return json.dumps(value.tolist())
+    return render_template("index.html")
+
+    
 @app.route('/getpoles', methods=['POST', 'GET'])
 def getpoles():
     if request.method == 'POST':
@@ -242,14 +249,15 @@ def activateordeactivateallpassfilter():
 
 @app.route('/getSignals', methods=['POST', 'GET'])
 def dataFilter():
-    global Numerator_polynomial_coefficients, Denominator_polynomial_coefficients
+    global b, a
     if request.method == 'POST':
         arr = json.loads(request.data)
         i = int(arr[0])
         size = int(arr[1])
+        print(size)
+        print("ahmed ashraf")
         x_chuncks = np.array(signalxAxisData[i * size:(i + 1) * size])
         y_chuncks = np.array(signalyAxisData[i * size:(i + 1) * size])
-        print(type(y_chuncks))
         filterdata(y_chuncks)
         return jsonify({
             'xAxisData': x_chuncks.tolist(),
@@ -257,49 +265,6 @@ def dataFilter():
             'filter': filteredSignalYdata.tolist(),
             'datalength': dataLength,
         })
-    return render_template("index.html")
-
-
-@app.route('/getGeneratedSignals', methods=['POST', 'GET'])
-def generatedDataFilter():
-    print(request.method)
-    if session.get("x") is None:
-        session["x"]=[]
-    # session['x']=[]
-    if request.method == 'POST':
-        # data is a dataframe of x, y points to be drawn where x represents freq of mouse movements
-        # and y represents amplitude (difference between two points on original x axis)
-
-        # alternate solution is to recieve both x an array, then apply filter on y_vals then turn to list directly
-        # in which case, x array stays the same, but subtract from y array 1/2 canvas value (check it from screen)
-        #using the "get elements by id" code
-
-
-        # data is an array of x coordnates of mou_se movements in this code
-        #  x_axis_data--> array feha 1/time, w ageeb 7aga bt3ed el wa2t
-        # data=json.loads(request.data)
-        x_array=request.get_json("x_array")
-        x_arr=x_array['x_array']
-        # session['x']
-        session['x'].append(x_arr)
-        session.modified = True
-        point_array=session['x']
-        x_axis_data=np.arange(0, len(point_array), 10)
-        point_array=list( itertools.chain.from_iterable(point_array))
-        y_axis_data= []
-        # for i in range (len(point_array)):
-        #     y_axis_data[i]= point_array[i]-800
-        #checking that array is correct
-        print(len(y_axis_data), len(point_array))
-
-        filterdata(np.array(y_axis_data))
-        return jsonify({
-             'xAxisData': x_axis_data.tolist(),
-             'yAxisData': point_array,
-             'filter': filteredSignalYdata,
-             'datalength': len(y_axis_data),
-        })
-
     return render_template("index.html")
 
 
@@ -313,5 +278,8 @@ def my_form_post():
     return render_template("index.html")
 
 
+
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug = True)
